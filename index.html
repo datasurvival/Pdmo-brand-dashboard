@@ -127,7 +127,7 @@ footer{text-align:center;color:var(--mute);font-size:14px;padding:0 24px 32px}
     <div class="grid g2">
       <div class="card"><h3>กลุ่มเป้าหมาย<span class="hint">คลิกเพื่อกรอง</span></h3><div class="box"><canvas id="cSeg"></canvas></div></div>
       <div class="card"><h3>เพศ<span class="hint">คลิกเพื่อกรอง</span></h3><div class="box"><canvas id="cGen"></canvas></div></div>
-      <div class="card"><h3>ช่วงอายุ<span class="hint">คลิกเพื่อกรอง</span></h3><div class="box"><canvas id="cAge"></canvas></div></div>
+      <div class="card"><h3>ช่วงอายุ (ปี)<span class="hint">คลิกเพื่อกรอง</span></h3><div class="box"><canvas id="cAge"></canvas></div></div>
       <div class="card"><h3>สัดส่วนความพึงพอใจ (ให้คะแนน 4–5)</h3><div class="box"><canvas id="cLik"></canvas></div></div>
     </div>
     <div class="card" style="margin-top:18px"><h3>แผนที่ความร้อน: กลุ่มเป้าหมาย × มิติ (หลังปรับแบรนด์)<span class="hint">คลิกแถวเพื่อกรอง</span></h3>
@@ -241,27 +241,27 @@ function render(){
   const no=rows(D.old,'grp'),nn=rows(D.new,'grp');
   const sp=rs=>{const t=rs.length||1;return[0,1,2].map(g=>rs.filter(r=>grpOf(r[19])===g).length/t*100)};
   const so=sp(no),sn=sp(nn),cols=[C.bad,C.mid,C.nw];
-  mk('cNps',{type:'bar',data:{labels:['ก่อน','หลัง'],datasets:GRP.map((l,i)=>({label:l,data:[so[i],sn[i]],backgroundColor:fade(cols[i],F.grp<0||F.grp===i),borderRadius:6}))},
-    options:{indexAxis:'y',scales:{x:{stacked:true,max:100,ticks:{callback:v=>v+'%',font:{size:fs()}},...axis},y:{stacked:true,grid:{display:false},ticks:{font:{size:15,weight:'600'}}}},
-    plugins:{legend:leg(),tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.x.toFixed(1)}%`}}},...click(e=>toggle('grp',e.datasetIndex))}});
+  mk('cNps',{type:'bar',data:{labels:['ก่อน','หลัง'],datasets:GRP.map((l,i)=>({label:l,data:[so[i],sn[i]],backgroundColor:fade(cols[i],F.grp<0||F.grp===i),borderRadius:6,barPercentage:.95,categoryPercentage:.6}))},
+    options:{indexAxis:'y',scales:{x:{stacked:true,max:100,ticks:{callback:v=>v+'%',font:{size:fs()}},...axis},y:{stacked:true,grid:{display:false},border:{display:false},ticks:{display:false}}},layout:{padding:{left:2,right:8}},
+    plugins:{rowLabels:{labels:['ก่อนปรับแบรนด์','หลังปรับแบรนด์']},legend:leg(),tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.x.toFixed(1)}%`}}},...click(e=>toggle('grp',e.datasetIndex))}});
   const hs=rs=>Array.from({length:11},(_,s)=>rs.length?rs.filter(r=>r[19]===s).length/rs.length*100:0);
   const hc=c=>Array.from({length:11},(_,s)=>fade(c,F.grp<0||grpOf(s)===F.grp));
-  const hd=(lab,c,rs,dx)=>{const d=hs(rs).map((y,s)=>({x:s+dx,y,s}));return{label:lab,data:d,backgroundColor:hc(c),borderColor:hc(c),pointRadius:d.map(p=>p.y>0?5+Math.sqrt(p.y)*1.7:0),pointHoverRadius:d.map(p=>p.y>0?7+Math.sqrt(p.y)*1.7:0)}};
+  const hd=(lab,c,rs,dx)=>{const d=hs(rs).map((y,s)=>({x:s+dx,y,s}));return{label:lab,data:d,backgroundColor:hc(c),borderColor:hc(c),clip:false,pointRadius:d.map(p=>p.y>0?(mob?4:5)+Math.sqrt(p.y)*(mob?1.3:1.7):0),pointHoverRadius:d.map(p=>p.y>0?(mob?6:7)+Math.sqrt(p.y)*(mob?1.3:1.7):0)}};
   mk('cHist',{type:'scatter',data:{datasets:[hd('ก่อน',C.old,no,-.15),hd('หลัง',C.nw,nn,.15)]},
-    options:{scales:{y:{min:0,ticks:{callback:v=>v+'%',font:{size:fs()}},...axis},x:{min:-.6,max:10.6,grid:{display:false},afterBuildTicks:a=>{a.ticks=[...Array(11).keys()].map(v=>({value:v}))},ticks:{font:{size:fs()},callback:v=>String(v)},title:{display:true,text:'คะแนนที่ให้ (0–10)',font:{size:fs()}}}},
+    options:{layout:{padding:{left:2,right:10,top:10}},scales:{y:{min:0,ticks:{callback:v=>v+'%',font:{size:fs()}},...axis},x:{min:-1,max:11,grid:{display:false},afterBuildTicks:a=>{a.ticks=[...Array(11).keys()].map(v=>({value:v}))},ticks:{font:{size:fs()},callback:v=>String(v)},title:{display:true,text:'คะแนนที่ให้ (0–10)',font:{size:fs()}}}},
     plugins:{stems:{on:1},legend:{...leg(),labels:{...leg().labels,usePointStyle:true,pointStyle:'circle'}},tooltip:{callbacks:{title:i=>'คะแนน '+i[0].raw.s,label:c=>`${c.dataset.label}: ${c.raw.y.toFixed(1)}% ของผู้ตอบ`}}},...click(e=>toggle('grp',grpOf(e.index)))}});
   // satisfaction share
   const sh=(rs,d)=>rs.length?avg(rs.map(r=>avg([0,1,2,3].map(j=>r[3+d*4+j]>=4?1:0))))*100:0;
   mk('cLik',{type:'bar',data:{labels:L,datasets:[{label:'ก่อน',data:[0,1,2,3].map(d=>sh(o,d)),backgroundColor:C.old,borderRadius:7},{label:'หลัง',data:[0,1,2,3].map(d=>sh(n,d)),backgroundColor:C.sky,borderRadius:7}]},
     options:{scales:{y:{max:115,ticks:{stepSize:25,font:{size:fs()},callback:v=>v>100?'':v+'%'},...axis},x:xT()},plugins:{val:{on:1,pct:1},legend:leg()}}});
   // breakdown charts (each excludes its own filter)
-  const brk=(id,key,labels,idx)=>{const g=labels.map((_,v)=>[rows(D.old,key).filter(r=>r[idx]===v),rows(D.new,key).filter(r=>r[idx]===v)]),on=i=>F[key]<0||F[key]===i;
-    mk(id,{type:'bar',data:{labels,datasets:[{label:'ก่อน',data:g.map(x=>allMean(x[0])),backgroundColor:labels.map((_,i)=>fade(C.old,on(i))),borderRadius:8},{label:'หลัง',data:g.map(x=>allMean(x[1])),backgroundColor:labels.map((_,i)=>fade(C.nw,on(i))),borderRadius:8}]},
-      options:{scales:{y:yS(5.6,1),x:{grid:{display:false},ticks:{font:{size:fs()},maxRotation:0}}},plugins:{val:{on:1},legend:leg(),tooltip:{callbacks:{afterLabel:c=>'n = '+g[c.dataIndex][c.datasetIndex].length}}},...click(e=>toggle(key,e.index))}});return g};
-  const sg=brk('cSeg','seg',D.segs,0);brk('cGen','gen',D.gen,1);
+  const brk=(id,key,labels,idx,short)=>{const tl=mob&&short?short:labels;const g=labels.map((_,v)=>[rows(D.old,key).filter(r=>r[idx]===v),rows(D.new,key).filter(r=>r[idx]===v)]),on=i=>F[key]<0||F[key]===i;
+    mk(id,{type:'bar',data:{labels:tl,datasets:[{label:'ก่อน',data:g.map(x=>allMean(x[0])),backgroundColor:labels.map((_,i)=>fade(C.old,on(i))),borderRadius:8},{label:'หลัง',data:g.map(x=>allMean(x[1])),backgroundColor:labels.map((_,i)=>fade(C.nw,on(i))),borderRadius:8}]},
+      options:{scales:{y:yS(5.6,1),x:{grid:{display:false},ticks:{font:{size:fs()},maxRotation:0,autoSkip:false}}},layout:{padding:{right:mob?16:4,left:2}},plugins:{val:{on:1},legend:leg(),tooltip:{callbacks:{title:i=>labels[i[0].dataIndex],afterLabel:c=>'n = '+g[c.dataIndex][c.datasetIndex].length}}},...click(e=>toggle(key,e.index))}});return g};
+  const sg=brk('cSeg','seg',D.segs,0,['ประชาชน','จนท.รัฐ','นักศึกษา','สื่อมวลชน']);brk('cGen','gen',D.gen,1,['ชาย','หญิง','ทางเลือก']);
   const ag=D.age.map((_,a)=>[rows(D.old,'age').filter(r=>r[2]===a),rows(D.new,'age').filter(r=>r[2]===a)]),aon=i=>F.age<0||F.age===i;
   const lineDs=(lab,c,j)=>({label:lab,data:ag.map(x=>allMean(x[j])),borderColor:c,backgroundColor:c,tension:.35,borderWidth:4,pointRadius:ag.map((_,i)=>F.age===i?10:6),pointBackgroundColor:ag.map((_,i)=>fade(c,aon(i))),pointBorderColor:ag.map((_,i)=>fade(c,aon(i)))});
-  mk('cAge',{type:'line',data:{labels:D.age,datasets:[lineDs('ก่อน',C.old,0),lineDs('หลัง',C.nw,1)]},options:{scales:{y:{min:1,max:5,ticks:{stepSize:1,font:{size:fs()}},...axis},x:{grid:{display:false},ticks:{font:{size:fs()},maxRotation:mob?40:0}}},plugins:{legend:leg(),tooltip:{callbacks:{afterLabel:c=>'n = '+ag[c.dataIndex][c.datasetIndex].length}}},interaction:{mode:'nearest',intersect:false},...click(e=>toggle('age',e.index))}});
+  mk('cAge',{type:'line',data:{labels:mob?['<20','20–30','31–40','41–50','51–60','61+']:D.age,datasets:[lineDs('ก่อน',C.old,0),lineDs('หลัง',C.nw,1)]},options:{scales:{y:{min:1,max:5,ticks:{stepSize:1,font:{size:fs()}},...axis},x:{grid:{display:false},ticks:{font:{size:fs()},maxRotation:0,autoSkip:false}}},layout:{padding:{right:mob?14:4,left:2}},plugins:{legend:leg(),tooltip:{callbacks:{title:i=>D.age[i[0].dataIndex],afterLabel:c=>'n = '+ag[c.dataIndex][c.datasetIndex].length}}},interaction:{mode:'nearest',intersect:false},...click(e=>toggle('age',e.index))}});
   // heatmap
   const cell=(a,b)=>{if(!b.length)return'<td style="background:#EEF1F8;color:#8C96B8">–</td>';const v=dimOrAll(b,a),dv=a<0?0:0;return''};
   const dimOrAll=(rs,d)=>d<0?allMean(rs):dimMean(rs,d);
@@ -269,8 +269,8 @@ function render(){
   document.getElementById('heat').innerHTML='<tr><th></th>'+L.map(d=>`<th>${d}</th>`).join('')+'<th>รวม</th></tr>'+sg.map((x,s)=>`<tr data-s="${s}" class="${F.seg===s?'sel':F.seg>=0?'dim':''}"><td class="n">${D.segs[s]}</td>`+[0,1,2,3,-1].map(d=>hc2(x,d)).join('')+'</tr>').join('');
   // mix
   const pc=(rs,s)=>rs.length?rs.filter(r=>r[0]===s).length/rs.length*100:0,mc=['#1F2F85','#0A7CC4','#F2B705','#8C96B8'],mo=rows(D.old,'seg'),mn=rows(D.new,'seg');
-  mk('cMix',{type:'bar',data:{labels:['ก่อน','หลัง'],datasets:D.segs.map((s,i)=>({label:s,data:[pc(mo,i),pc(mn,i)],backgroundColor:fade(mc[i],F.seg<0||F.seg===i),borderRadius:5}))},
-    options:{indexAxis:'y',scales:{x:{stacked:true,max:100,ticks:{callback:v=>v+'%',font:{size:fs()}},...axis},y:{stacked:true,grid:{display:false},ticks:{font:{size:15,weight:'600'}}}},plugins:{legend:leg(),tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.x.toFixed(1)}%`}}},...click(e=>toggle('seg',e.datasetIndex))}});
+  mk('cMix',{type:'bar',data:{labels:['ก่อน','หลัง'],datasets:D.segs.map((s,i)=>({label:s,data:[pc(mo,i),pc(mn,i)],backgroundColor:fade(mc[i],F.seg<0||F.seg===i),borderRadius:5,barPercentage:.95,categoryPercentage:.6}))},
+    options:{indexAxis:'y',scales:{x:{stacked:true,max:100,ticks:{callback:v=>v+'%',font:{size:fs()}},...axis},y:{stacked:true,grid:{display:false},border:{display:false},ticks:{display:false}}},layout:{padding:{left:2,right:8}},plugins:{rowLabels:{labels:['ก่อนปรับแบรนด์','หลังปรับแบรนด์']},legend:leg(),tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.x.toFixed(1)}%`}}},...click(e=>toggle('seg',e.datasetIndex))}});
   document.getElementById('mixNote').textContent=`สื่อมวลชนเปลี่ยนจาก ${pc(mo,3).toFixed(0)}% เป็น ${pc(mn,3).toFixed(0)}% ของผู้ตอบ – ควรดูคู่กับกราฟแยกกลุ่มเพื่อเทียบอย่างเป็นธรรม`;
   // text sections
   const tally=(rs,idx,labs)=>labs.map((l,b)=>[l,rs.filter(r=>(r[idx]>>b)&1).length]).sort((a,b)=>b[1]-a[1]);
@@ -286,6 +286,8 @@ let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{const 
 render();
 
 {const l=document.createElement('link');l.rel='icon';l.href=document.querySelector('.logo img').src;document.head.appendChild(l)}
+
+if(document.fonts&&document.fonts.load){Promise.race([Promise.all([400,500,600,700].map(w=>document.fonts.load(`${w} 14px "IBM Plex Sans Thai"`,'กขคabc'))),new Promise(r=>setTimeout(r,3000))]).then(()=>setTimeout(render,0)).catch(()=>{})}
 
 </script>
 </body>
